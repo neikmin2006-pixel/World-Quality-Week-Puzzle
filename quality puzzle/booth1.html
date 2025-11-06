@@ -23,7 +23,7 @@ function makeToken() {
 }
 function generateQR() {
   const token = makeToken();
-  const url = `index.html?booth=1&token=${encodeURIComponent(token)}`;
+  const url = `https://neikmin2006-pixel.github.io/World-Quality-Week-Puzzle/index.html?booth=1&token=${encodeURIComponent(token)}`;
   document.getElementById("qrcode").innerHTML = "";
   QRCode.toCanvas(document.createElement("canvas"), url, { width: 250 }, (err, canvas) => {
     if (!err) document.getElementById("qrcode").appendChild(canvas);
