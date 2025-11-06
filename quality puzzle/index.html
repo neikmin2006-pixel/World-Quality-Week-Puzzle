@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Quality Puzzle Challenge</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #f8f9fc; padding: 40px; }
+  h1 { color: #b30000; }
+  .puzzle { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  .piece { width: 120px; height: 120px; background-color: #eee; border: 2px solid #ccc; background-size: cover; background-position: center; }
+  #emailInput { padding: 8px; width: 250px; }
+  button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
+  #message { margin-top: 20px; font-weight: bold; color: green; }
+</style>
+</head>
+<body>
+  <h1>🧩 Takeda Quality Puzzle</h1>
+  <div id="loginSection">
+    <p>Enter your Takeda email to start:</p>
+    <input type="email" id="emailInput" placeholder="name@takeda.com" required />
+    <br />
+    <button id="startBtn">Start</button>
+  </div>
+
+  <div id="puzzleSection" style="display:none;">
+    <h3>Your Progress</h3>
+    <div class="puzzle" id="puzzleBoard"></div>
+    <div id="message"></div>
+  </div>
+
+<script>
+  const TOTAL_PIECES = 4;
+  const PIECE_IMAGES = [
+    "piece1.png", "piece2.png", "piece3.png", "piece4.png"
+  ];
+  const FULL_PUZZLE = "full.jpg";
+  const VALID_WINDOW = 60; // 60 seconds token validity
+  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzVZ9y15NGESjSlJVdJYZB65ARVXdzjuqDsmHTxM2xGv-edz-0z4nxXQ870VxEgrmFM/exec"; // optional
+
+  let userEmail = "";
+  let userData = { pieces: [] };
+
+  const params = new URLSearchParams(window.location.search);
+  const booth = params.get("booth");
+  const token = params.get("token");
+
+  // --- Email login ---
+  document.getElementById("startBtn").onclick = () => {
+    const email = document.getElementById("emailInput").value.trim().toLowerCase();
+    if (!email.endsWith("@takeda.com")) {
+      alert("Please enter a valid Takeda email.");
+      return;
+    }
+    userEmail = email;
+    localStorage.setItem("quality_user", email);
+    loadUser();
+  };
+
+  function loadUser() {
+    const saved = localStorage.getItem("quality_" + userEmail);
+    userData = saved ? JSON.parse(saved) : { pieces: [] };
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("puzzleSection").style.display = "block";
+    renderPuzzle();
+    if (booth && token) tryAddPiece(booth, token);
+  }
+
+  function renderPuzzle() {
+    const board = document.getElementById("puzzleBoard");
+    board.innerHTML = "";
+    for (let i = 0; i < TOTAL_PIECES; i++) {
+      const div = document.createElement("div");
+      div.className = "piece";
+      if (userData.pieces.includes(i)) {
+        div.style.backgroundImage = `url(${PIECE_IMAGES[i]})`;
+      }
+      board.appendChild(div);
+    }
+    const msg = document.getElementById("message");
+    if (userData.pieces.length === TOTAL_PIECES) {
+      board.innerHTML = `<img src="${FULL_PUZZLE}" width="300" />`;
+      msg.textContent = "🎉 Congratulations! Puzzle complete. Please redeem your prize!";
+      fetch(WEBHOOK_URL + "?email=" + encodeURIComponent(userEmail))
+        .catch(()=>{});
+    } else {
+      msg.textContent = `You have ${userData.pieces.length}/${TOTAL_PIECES} pieces.`;
+    }
+  }
+
+  function saveUser() {
+    localStorage.setItem("quality_" + userEmail, JSON.stringify(userData));
+  }
+
+  function tryAddPiece(booth, token) {
+    const now = Math.floor(Date.now()/1000);
+    const [timestamp, secret] = atob(token).split(":");
+    if (Math.abs(now - timestamp) > VALID_WINDOW) {
+      alert("This QR code has expired. Please rescan the live code.");
+      return;
+    }
+    const boothIndex = parseInt(booth)-1;
+    if (!userData.pieces.includes(boothIndex)) {
+      userData.pieces.push(boothIndex);
+      saveUser();
+      alert(`✅ Booth ${booth} piece collected!`);
+    } else {
+      alert("You already collected this booth's piece!");
+    }
+    renderPuzzle();
+  }
+
+  const storedEmail = localStorage.getItem("quality_user");
+  if (storedEmail) { userEmail = storedEmail; loadUser(); }
+</script>
+</body>
+</html>

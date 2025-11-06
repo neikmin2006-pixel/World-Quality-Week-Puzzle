@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Booth 1 QR</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+  body { font-family: Arial; text-align: center; background:#fff; padding: 40px; }
+  #qrcode { margin-top: 30px; }
+</style>
+</head>
+<body>
+  <h2>Booth 1 - Scan to collect your piece!</h2>
+  <div id="qrcode"></div>
+  <p>QR refreshes every 30 seconds ⏱️</p>
+
+<script>
+const REFRESH = 30000;
+function makeToken() {
+  const now = Math.floor(Date.now()/1000);
+  const secret = "takedaSecret"; // keep this same for all booths
+  return btoa(now + ":" + secret);
+}
+function generateQR() {
+  const token = makeToken();
+  const url = `index.html?booth=1&token=${encodeURIComponent(token)}`;
+  document.getElementById("qrcode").innerHTML = "";
+  QRCode.toCanvas(document.createElement("canvas"), url, { width: 250 }, (err, canvas) => {
+    if (!err) document.getElementById("qrcode").appendChild(canvas);
+  });
+}
+generateQR();
+setInterval(generateQR, REFRESH);
+</script>
+</body>
+</html>
